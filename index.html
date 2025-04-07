@@ -60,11 +60,9 @@
                 keySession.addEventListener('message', async (event) => {
                     console.log('Сообщение от сервера:', event.message);
 
-                    // Пример ключа (замените на реальный ключ)
-                    const key = Uint8Array.from(atob('bFZGcXJLMGFZVFdDdENBPQ'), c => c.charCodeAt(0));
-                    const kid = Uint8Array.from(atob('RXBpWHJWVlQxbmRDeUk4PQ'), c => c.charCodeAt(0));
-
                     // Обновляем сессию ключом
+                    const key = Uint8Array.from(atob('bFZGcXJLMGFZVFdDdENBPQ'), c => c.charCodeAt(0)); // Ключ
+                    const kid = Uint8Array.from(atob('RXBpWHJWVlQxbmRDeUk4PQ'), c => c.charCodeAt(0)); // Идентификатор ключа
                     await keySession.update(new Uint8Array([
                         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                         0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
@@ -72,8 +70,9 @@
                 });
 
                 // Генерация запроса на получение ключа
-                const initData = new Uint8Array([/* PSSH данные */]);
-                keySession.generateRequest('cenc', initData);
+                const psshBase64 = "AAAAMnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADcIARIQweJ9o6qASU+rS3Vv4wM9FxoMZXhwMTAy"; // PSSH из файла
+                const initData = Uint8Array.from(atob(psshBase64), c => c.charCodeAt(0));
+                await keySession.generateRequest('cenc', initData);
             } catch (error) {
                 console.error('Ошибка при настройке ClearKey DRM:', error);
             }
