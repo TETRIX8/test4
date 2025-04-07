@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Видеоплеер</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        video {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Видеоплеер</h1>
+    <video id="videoPlayer" controls>
+        <source id="videoSource" src="" type="video/mp4">
+        Ваш браузер не поддерживает воспроизведение видео.
+    </video>
+
+    <script>
+        // Шаг 1: Базовый URL видео
+        const videoUrl = "https://edge-msk-4.kinescopecdn.net/c1fb082f-30e0-4d26-b3c4-2262155badc6/videos/042e6a7f-5955-4813-b203-208f5ee07d41/assets/0193f64c-6c9a-78c8-9215-b7f9c193a876/0/78693560/1080p.mp4";
+
+        // Шаг 2: Добавляем параметры
+        const projectId = "25ff07fe-a3a8-4474-8793-578026da80fe"; // kinescope_project_id
+        const token = "AAAAAABAr0A"; // kcd
+
+        // Формируем полный URL с параметрами
+        const fullVideoUrl = `${videoUrl}?kinescope_project_id=${projectId}&kcd=${token}`;
+
+        // Устанавливаем источник видео
+        const videoElement = document.getElementById("videoPlayer");
+        const videoSource = document.getElementById("videoSource");
+        videoSource.src = fullVideoUrl;
+
+        // Шаг 3: Настройка ClearKey DRM
+        async function setupClearKey(videoElement) {
+            try {
+                // Запрос доступа к ClearKey DRM
+                const mediaKeySystemAccess = await navigator.requestMediaKeySystemAccess('org.w3.clearkey', [{
+                    initDataTypes: ['cenc'],
+                    videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.64001e"' }]
+                }]);
+
+                // Создаем MediaKeys
+                const mediaKeys = await mediaKeySystemAccess.createMediaKeys();
+                videoElement.setMediaKeys(mediaKeys);
+
+                // Создаем сессию для передачи ключей
+                const keySession = mediaKeys.createSession();
+                keySession.addEventListener('message', async (event) => {
+                    console.log('Сообщение от сервера:', event.message);
+
+                    // Пример ключа (замените на реальный ключ)
+                    const key = Uint8Array.from(atob('bFZGcXJLMGFZVFdDdENBPQ'), c => c.charCodeAt(0));
+                    const kid = Uint8Array.from(atob('RXBpWHJWVlQxbmRDeUk4PQ'), c => c.charCodeAt(0));
+
+                    // Обновляем сессию ключом
+                    await keySession.update(new Uint8Array([
+                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                        0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
+                    ]));
+                });
+
+                // Генерация запроса на получение ключа
+                const initData = new Uint8Array([/* PSSH данные */]);
+                keySession.generateRequest('cenc', initData);
+            } catch (error) {
+                console.error('Ошибка при настройке ClearKey DRM:', error);
+            }
+        }
+
+        // Загружаем видео и настраиваем ClearKey
+        videoElement.load();
+        setupClearKey(videoElement);
+    </script>
+</body>
+</html>
